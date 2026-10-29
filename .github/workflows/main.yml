@@ -7,29 +7,35 @@ on:
 
 jobs:
   build:
+    strategy:
+      fail-fast: false
+      matrix:
+        version: ['cp313-cp313', 'cp314-cp314', 'cp315-cp315']
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
       - name: Build image
         run: docker build --platform linux/amd64 -t builder .
-      - name: Build Python 3.13 wheel
+      - name: Build wheel
+        env:
+          PYTHON_TAG: ${{ matrix.version }}
         run: |
           set -euo pipefail
           curl --fail --location --output zeroc-ice-3.6.5.tar.gz 'https://pypi.io/packages/source/z/zeroc-ice/zeroc-ice-3.6.5.tar.gz'
           tar zxf zeroc-ice-3.6.5.tar.gz
           for f in patches/*.patch; do patch --batch --forward -p0 < "$f"; done
-          docker run --rm --platform linux/amd64 -i -v "$PWD/zeroc-ice-3.6.5:/build" -w /build builder /bin/bash -s <<'BUILD'
+          docker run --rm --platform linux/amd64 -i -e PYTHON_TAG -v "$PWD/zeroc-ice-3.6.5:/build" -w /build builder /bin/bash -s <<'BUILD'
           set -euo pipefail
-          PYTHON=/opt/python/cp313-cp313/bin/python
+          PYTHON="/opt/python/$PYTHON_TAG/bin/python"
           "$PYTHON" setup.py build -j 3
           "$PYTHON" setup.py bdist_wheel
-          auditwheel repair --plat manylinux_2_28_x86_64 -w /build/wheelhouse /build/dist/zeroc_ice-3.6.5-cp313-cp313-linux_x86_64.whl
+          auditwheel repair --plat manylinux_2_28_x86_64 -w /build/wheelhouse "/build/dist/zeroc_ice-3.6.5-$PYTHON_TAG-linux_x86_64.whl"
           BUILD
       - name: Upload artifacts
         uses: actions/upload-artifact@v7
         with:
-          name: artifacts
+          name: wheels-${{ matrix.version }}
           path: zeroc-ice-3.6.5/wheelhouse/*manylinux*.whl
           if-no-files-found: error
   release:
@@ -42,8 +48,9 @@ jobs:
       - name: Download artifacts from build
         uses: actions/download-artifact@v7
         with:
-          name: artifacts
+          pattern: wheels-*
           path: artifacts
+          merge-multiple: true
       - name: List artifacts
         run: ls -R
       - name: Release
