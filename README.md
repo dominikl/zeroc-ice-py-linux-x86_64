@@ -1,10 +1,7 @@
 Linux x86_64 Zeroc Ice Python Builder
 =====================================
 
-Builds ZeroC Ice Python manylinux_2_28 wheel packages for Linux x86_64.
+See https://github.com/glencoesoftware/zeroc-ice-py-linux-x86_64 .
 
-** NOTE ** : the manylinux_2_28 wheel packages are bundled with
-OpenSSL 1.1.1k - see
-https://github.com/pypa/manylinux#manylinux_2_28-almalinux-8-based.
+This fork just adds builds for Python 3.14 and 3.15.
 
-`pip>=20.3` is required to use these artifacts.
