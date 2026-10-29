@@ -3,3 +3,5 @@
 FROM quay.io/pypa/manylinux_2_28_x86_64
 
 RUN yum install -y -q bzip2-devel openssl-devel
+RUN /opt/python/cp313-cp313/bin/python -m pip install --upgrade pip setuptools wheel
+
